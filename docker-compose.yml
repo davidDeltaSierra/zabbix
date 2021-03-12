@@ -1,0 +1,64 @@
+version: '3.1'
+
+networks:
+  network-zabbix:
+    driver: bridge
+
+services:
+  zabbix-server:
+    container_name: zabbix-server
+    image: zabbix/zabbix-server-mysql:alpine-5.2-latest
+    networks:
+      - network-zabbix
+    ports:
+      - '10051:10051'
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=live0102
+      - DB_SERVER_HOST=host.docker.internal
+
+  zabbix-frontend:
+    container_name: zabbix-frontend
+    image: zabbix/zabbix-web-nginx-mysql:alpine-5.2-latest
+    networks:
+      - network-zabbix
+    ports:
+      - '8080:8080'
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=live0102
+      - DB_SERVER_HOST=host.docker.internal
+      - PHP_TZ=America/Sao_Paulo
+      - ZBX_SERVER_HOST=zabbix-server
+    depends_on: 
+      - zabbix-agent
+
+  zabbix-agent:
+    user: root
+    container_name: zabbix-agent2
+    image: zabbix/zabbix-agent2:alpine-5.0-latest
+    volumes:
+      - ///var/run/docker.sock:///var/run/docker.sock
+      - D:\projetos\zabbix\zabbix_agent2.conf:/etc/zabbix/zabbix_agent2.conf
+    networks:
+      - network-zabbix
+    ports:
+      - '10050:10050'
+    environment:
+      - ZBX_HOSTNAME=zabbix-agent
+      - ZBX_SERVER_HOST=zabbix-server
+    depends_on: 
+      - zabbix-server
+
+  grafana:
+    user: root
+    container_name: grafana
+    image: grafana/grafana
+    networks:
+      - network-zabbix
+    ports:
+      - '3000:3000'
+    environment:
+      - GF_INSTALL_PLUGINS=alexanderzobnin-zabbix-app
+    depends_on: 
+      - zabbix-frontend
