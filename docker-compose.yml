@@ -48,7 +48,6 @@ services:
       - zabbix-server
 
   grafana:
-    user: root
     container_name: grafana
     image: grafana/grafana
     networks:
